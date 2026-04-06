@@ -1,0 +1,128 @@
+body {
+    background-color: #ffffff; 
+    color: #000000; 
+    /* Font ala programmer profesional */
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace; 
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 750px;
+    margin: 0 auto;
+    border: 3px solid #000000; 
+    padding: 40px;
+    /* Tambahan efek bayangan kaku ala desain tech retro */
+    box-shadow: 8px 8px 0px #000000; 
+}
+
+/* NAMA DI TENGAH */
+h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3.5em;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+/* SUBTITLE DI TENGAH */
+.subtitle {
+    color: #555555;
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* KOTAK SUB-JUDUL */
+h3 {
+    background-color: #090b09;
+    color: #fff;
+    padding: 8px 16px;
+    display: inline-block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.1em;
+    border-radius: 4px; /* Ujungnya ga terlalu tajam */
+    letter-spacing: 1px;
+}
+
+/* GARIS PEMISAH MULTI-DEVICE */
+.divider {
+    margin: 30px 0;
+    border-bottom: 2px dashed #000000; /* Garis putus-putus otomatis */
+    width: 100%;
+}
+
+.skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px; /* Jarak yang rapi antar skill */
+}
+
+.skills span {
+    border: 2px solid #000000;
+    padding: 6px 12px;
+    display: inline-block;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+/* EFEK SKILL DISOROT */
+.skills span:hover {
+    background-color: #00ff00;
+    color: black;
+    cursor: pointer;
+    transform: translateY(-3px); /* Efek melayang */
+    box-shadow: 0 5px 10px rgba(0, 255, 0, 0.4);
+}
+
+.social-buttons {
+    display: flex;
+    justify-content: center; /* Tombol ke tengah */
+    flex-wrap: wrap;
+}
+
+.social-buttons a {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px; 
+    border: 2px solid #181717; 
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    color: white; 
+    background-color: #181717; 
+}
+
+.social-buttons a:hover {
+    box-shadow: 0 0 20px #04f430f9; 
+    border-color: #04f430f9;
+    color: #04f430f9;
+}
+
+.footer {
+    margin-top: 40px;
+    font-size: 0.8em;
+    color: #777;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* RESPONSIVE UNTUK HP */
+@media (max-width: 600px) {
+    .container {
+        border: 2px solid #000000;
+        padding: 20px;
+        box-shadow: 5px 5px 0px #000000;
+    }
+    h1 {
+        font-size: 2.2em; /* Nama mengecil sedikit di HP */
+    }
+    .social-buttons a {
+        width: 100%; /* Tombol jadi full lebar numpuk ke bawah */
+        text-align: center;
+        margin: 5px 0;
+    }
+}

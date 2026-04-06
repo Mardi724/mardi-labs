@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer — Mardi724</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Montserrat:wght@800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green: #00ff00;
+            --green-dim: #00cc00;
+            --green-glow: rgba(0, 255, 0, 0.15);
+            --black: #000000;
+            --dark: #0a0a0a;
+            --border: #1a1a1a;
+            --muted: #333333;
+            --text-dim: #555555;
+        }
+
+        body {
+            background-color: var(--black);
+            color: var(--green);
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .site-header {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .site-logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            color: var(--green);
+            letter-spacing: 2px;
+            text-decoration: none;
+        }
+
+        .site-tag {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+        }
+
+        .card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--dark);
+            border: 2px solid var(--green);
+            box-shadow: 8px 8px 0 var(--green);
+            padding: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--green);
+            text-transform: uppercase;
+        }
+
+        .card-subtitle {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .status-badge {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--black);
+            background: var(--green);
+            padding: 4px 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .status-badge.idle {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+
+        /* Mode selector */
+        .modes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: none;
+            border-right: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            line-height: 1.4;
+        }
+
+        .mode-btn:last-child { border-right: none; }
+
+        .mode-btn:hover { color: var(--green); background: rgba(0,255,0,0.05); }
+
+        .mode-btn.active {
+            color: var(--black);
+            background: var(--green);
+            font-weight: 700;
+        }
+
+        /* Timer display */
+        .timer-display {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .timer-time {
+            font-size: 88px;
+            font-weight: 700;
+            color: var(--green);
+            letter-spacing: 6px;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-time.pulse {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .timer-mode-label {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Progress */
+        .progress-wrap {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .progress-bg {
+            width: 100%;
+            height: 3px;
+            background: var(--border);
+        }
+
+        .progress-fill {
+            height: 3px;
+            background: var(--green);
+            width: 0%;
+            transition: width 1s linear;
+            box-shadow: 0 0 8px var(--green-glow);
+        }
+
+        /* Session dots */
+        .session-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--border);
+            background: transparent;
+            transition: all 0.3s;
+        }
+
+        .dot.done {
+            background: var(--green);
+            border-color: var(--green);
+            box-shadow: 0 0 8px var(--green-glow);
+        }
+
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid var(--green);
+            color: var(--green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: var(--green); color: var(--black); }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn.primary { background: var(--green); color: var(--black); }
+
+        .btn.primary:hover { background: transparent; color: var(--green); }
+
+        .btn.secondary {
+            border-color: var(--border);
+            color: var(--text-dim);
+        }
+
+        .btn.secondary:hover {
+            border-color: var(--green);
+            color: var(--green);
+            background: transparent;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border: 1px solid var(--border);
+        }
+
+        .stat {
+            padding: 14px 10px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+        .stat:last-child { border-right: none; }
+
+        .stat-val {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        .stat-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Status line */
+        .status-line {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--muted);
+            margin-top: 1.2rem;
+            text-transform: uppercase;
+            min-height: 16px;
+        }
+
+        .status-line.running { color: var(--green); animation: blink 1.5s infinite; }
+        .status-line.done { color: var(--green); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Footer */
+        .site-footer {
+            width: 100%;
+            max-width: 480px;
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .site-footer a {
+            color: var(--green);
+            text-decoration: none;
+        }
+
+        @media (max-width: 500px) {
+            .timer-time { font-size: 64px; letter-spacing: 4px; }
+            .card { padding: 1.5rem; }
+            .controls { grid-template-columns: 1fr 1fr; }
+            .controls .btn:first-child { grid-column: 1 / -1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="site-header">
+        <a class="site-logo" href="https://Mardi724.github.io">MARDI724</a>
+        <span class="site-tag">// POMODORO.EXE</span>
+    </header>
+
+    <main class="card">
+
+        <div class="card-header">
+            <div>
+                <div class="card-title">Pomodoro Timer</div>
+                <div class="card-subtitle">focus · break · repeat</div>
+            </div>
+            <div class="status-badge idle" id="badge">IDLE</div>
+        </div>
+
+        <div class="modes">
+            <button class="mode-btn active" id="btn-work">Work<br>25 min</button>
+            <button class="mode-btn" id="btn-short">Break<br>5 min</button>
+            <button class="mode-btn" id="btn-long">Long<br>15 min</button>
+        </div>
+
+        <div class="timer-display">
+            <div class="timer-time" id="time-display">25:00</div>
+            <div class="timer-mode-label" id="mode-label">Focus Mode</div>
+        </div>
+
+        <div class="progress-wrap">
+            <div class="progress-meta">
+                <span>PROGRESS</span>
+                <span id="pct-label">0%</span>
+            </div>
+            <div class="progress-bg">
+                <div class="progress-fill" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="session-dots" id="session-dots"></div>
+
+        <div class="controls">
+            <button class="btn primary" id="main-btn">START</button>
+            <button class="btn secondary" id="btn-skip">SKIP</button>
+            <button class="btn secondary" id="btn-reset">RESET</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-val" id="stat-sessions">0</div>
+                <div class="stat-label">Sesi</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-focus">0m</div>
+                <div class="stat-label">Focus</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-breaks">0</div>
+                <div class="stat-label">Break</div>
+            </div>
+        </div>
+
+        <div class="status-line" id="status-text">system ready — press start</div>
+
+    </main>
+
+    <footer class="site-footer">
+        <span>© 2026 Mardi Corp.</span>
+        <a href="https://Mardi724.github.io">portfolio</a>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+        const MODES = {
+            work:  { label: 'Focus Mode',   seconds: 25 * 60 },
+            short: { label: 'Short Break',  seconds: 5 * 60 },
+            long:  { label: 'Long Break',   seconds: 15 * 60 },
+        };
+
+        let currentMode = 'work';
+        let totalSeconds = MODES.work.seconds;
+        let remaining = totalSeconds;
+        let running = false;
+        let interval = null;
+        let completedSessions = 0;
+        let completedBreaks = 0;
+        let totalFocusSeconds = 0;
+
+        const renderDots = () => {  
+            const el = document.getElementById('session-dots');
+            el.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const d = document.createElement('div');
+                d.className = 'dot' + (i < completedSessions % 4 ? ' done' : '');
+                el.appendChild(d);
+            }
+        }
+
+        const updateDisplay = () => {
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            document.getElementById('time-display').textContent =
+                String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            const pct = Math.round((totalSeconds - remaining) / totalSeconds * 100);
+            document.getElementById('progress-bar').style.width = pct + '%';
+            document.getElementById('pct-label').textContent = pct + '%';
+            document.getElementById('stat-sessions').textContent = completedSessions;
+            document.getElementById('stat-focus').textContent = Math.round(totalFocusSeconds / 60) + 'm';
+            document.getElementById('stat-breaks').textContent = completedBreaks;
+            renderDots();
+        }
+
+        const setMode = (mode) => {
+            if (running) return;
+            currentMode = mode;
+            const { label, seconds } = MODES[mode];
+            totalSeconds = seconds;
+            remaining = totalSeconds;
+            document.getElementById('mode-label').textContent = MODES[mode].label;
+            document.querySelectorAll('.mode-btn').forEach((b, i) => {
+                b.classList.toggle('active', ['work','short','long'][i] === mode);
+            });
+            setStatus('system ready — press start', '');
+            setBadge('IDLE', true);
+            updateDisplay();
+        }
+
+        const toggleTimer = () => {
+            if (running) {
+                clearInterval(interval);
+                running = false;
+                document.getElementById('main-btn').textContent = 'RESUME';
+                document.getElementById('main-btn').className = 'btn primary';
+                document.getElementById('time-display').classList.remove('pulse');
+                setStatus('paused', '');
+                setBadge('PAUSED', true);
+            } else {
+                running = true;
+                document.getElementById('main-btn').textContent = 'PAUSE';
+                document.getElementById('main-btn').className = 'btn';
+                document.getElementById('time-display').classList.add('pulse');
+                setStatus(currentMode === 'work' ? 'focusing...' : 'resting...', 'running');
+                setBadge(currentMode === 'work' ? 'FOCUS' : 'BREAK', false);
+                interval = setInterval(tick, 1000);
+            }
+        }
+
+        const tick = () => {
+            if (currentMode === 'work') totalFocusSeconds++;
+            remaining--;
+            updateDisplay();
+            if (remaining <= 0) {
+                clearInterval(interval);
+                running = false;
+                document.getElementById('time-display').classList.remove('pulse');
+                document.getElementById('main-btn').textContent = 'START';
+                document.getElementById('main-btn').className = 'btn primary';
+                if (currentMode === 'work') {
+                    completedSessions++;
+                    setStatus('sesi selesai! ambil istirahat.', 'done');
+                } else {
+                    completedBreaks++;
+                    setStatus('break selesai! siap fokus lagi?', 'done');
+                }
+                setBadge('DONE', true);
+                updateDisplay();
+            }
+        }
+
+        const skipSession = () => {
+            clearInterval(interval);
+            running = false;
+            if (currentMode === 'work') {
+                completedSessions++;
+                totalFocusSeconds += (MODES.work.seconds - remaining);
+            } else {
+                completedBreaks++;
+            }
+            remaining = 0;
+            document.getElementById('time-display').classList.remove('pulse');
+            document.getElementById('main-btn').textContent = 'START';
+            document.getElementById('main-btn').className = 'btn primary';
+            setStatus('sesi di-skip', '');
+            setBadge('IDLE', true);
+            updateDisplay();
+        }
+
+        const resetTimer = () => {
+            clearInterval(interval);
+            running = false;
+            remaining = totalSeconds;
+            document.getElementById('time-display').classList.remove('pulse');
+            document.getElementById('main-btn').textContent = 'START';
+            document.getElementById('main-btn').className = 'btn primary';
+            setStatus('system ready — press start', '');
+            setBadge('IDLE', true);
+            updateDisplay();
+        }
+
+        const setStatus = (text, cls) => {
+            const el = document.getElementById('status-text');
+            el.textContent = text;
+            el.className = `status-line ${cls ? '' + cls : ''}`;
+        }
+
+        const setBadge = (text, idle) => {
+            const el = document.getElementById('badge');
+            el.textContent = text;
+            el.className = `status-badge ${idle ?' idle':''}`;
+        }
+
+        renderDots();
+        updateDisplay();
+
+        document.getElementById('btn-work').addEventListener('click', () => setMode('work'));
+        document.getElementById('btn-short').addEventListener('click', () => setMode('short'));
+        document.getElementById('btn-long').addEventListener('click', () => setMode('long'));
+        document.getElementById('main-btn').addEventListener('click', toggleTimer);
+        document.getElementById('btn-skip').addEventListener('click', skipSession);
+        document.getElementById('btn-reset').addEventListener('click', resetTimer);
+        });
+    </script>
+
+</body>
+</html>
